@@ -25,6 +25,15 @@ module.exports = ctx => ({
     ['meta', { name: 'msapplication-TileImage', content: '/icons/msapplication-icon-144x144.png' }],
     ['meta', { name: 'msapplication-TileColor', content: '#000000' }]
   ],
+  markdown: {
+    markdown: {
+      extractHeaders: ['h2', 'h3', 'h4']
+    }
+    // lineNumbers: true,
+    // toc: {
+    //   includeLevel: [1, 2, 3, 4],
+    // },
+  },
   theme: '@vuepress/vue',
   themeConfig: {
     repo: 'vuejs/vuepress',
@@ -36,6 +45,7 @@ module.exports = ctx => ({
       indexName: 'vuepress'
     }) : null,
     smoothScroll: true,
+    // displayAllHeaders: true, // 默认值：false
     locales: {
       '/': {
         label: 'English',
@@ -59,6 +69,7 @@ module.exports = ctx => ({
         lastUpdated: '上次更新',
         nav: require('./nav/zh'),
         sidebar: {
+          '/zh/frontend/': getFrontendSidebar('前端'),
           '/zh/api/': getApiSidebar(),
           '/zh/guide/': getGuideSidebar('指南', '深入'),
           '/zh/plugin/': getPluginSidebar('插件', '介绍', '官方插件'),
@@ -108,15 +119,15 @@ function getGuideSidebar (groupA, groupB) {
       title: groupA,
       collapsable: false,
       children: [
-        '',
-        'getting-started',
-        'directory-structure',
-        'basic-config',
-        'assets',
-        'markdown',
-        'using-vue',
-        'i18n',
-        'deploy'
+        // '',
+        // 'getting-started',
+        // 'directory-structure',
+        // 'basic-config',
+        // 'assets',
+        // 'markdown',
+        // 'using-vue',
+        // 'i18n',
+        // 'deploy'
       ]
     },
     {
@@ -132,6 +143,33 @@ function getGuideSidebar (groupA, groupB) {
   ]
 }
 
+function getFrontendSidebar (groupA, groupB) {
+  return [
+    {
+      title: groupA,
+      collapsable: false,
+      sidebarDepth: 4,
+      children: [{
+        collapsable: false,
+        sidebarDepth: 4,
+        children: [
+          ['', 'JS'],
+          'performance/performance-ch.md',
+          'Safety/safety-cn.md'
+        ]
+      }]
+    }
+    // {
+    //   collapsable: false,
+    //   sidebarDepth: 2,
+    //   children: [
+    //     'performance/performance-ch.md',
+    //   ]
+    // },
+
+  ]
+}
+
 const officalPlugins = fs
   .readdirSync(path.resolve(__dirname, '../plugin/official'))
   .map(filename => 'official/' + filename.slice(0, -3))
@@ -143,7 +181,7 @@ function getPluginSidebar (pluginTitle, pluginIntro, officialPluginTitle) {
       title: pluginTitle,
       collapsable: false,
       children: [
-        ['', pluginIntro],
+        ['', pluginIntro], // 加载REAMME.md 侧边栏加载md 路径
         'using-a-plugin',
         'writing-a-plugin',
         'life-cycle',
@@ -164,9 +202,9 @@ function getThemeSidebar (groupA, introductionA) {
     {
       title: groupA,
       collapsable: false,
-      sidebarDepth: 2,
+      sidebarDepth: 4,
       children: [
-        ['', introductionA],
+        ['', 'introductionA'],
         'using-a-theme',
         'writing-a-theme',
         'option-api',

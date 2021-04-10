@@ -1,5 +1,9 @@
 module.exports = [
   {
+    text: '前端',
+    link: '/zh/frontend/'
+  },
+  {
     text: '指南',
     link: '/zh/guide/'
   },

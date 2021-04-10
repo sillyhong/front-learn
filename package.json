@@ -15,6 +15,7 @@
     "dev": "yarn tsc && yarn dev:docs",
     "dev:docs": "yarn workspace docs dev",
     "lint": "eslint packages --ext .js,.ts,.vue",
+    "lint:fix": "eslint packages --ext .js,.ts,.vue --fix",
     "packages:changed": "lerna changed",
     "packages:diff": "lerna diff",
     "packages:list": "lerna ls -l",
@@ -58,15 +59,18 @@
     "@typescript-eslint/parser": "^2.9.0",
     "all-contributors-cli": "^6.9.1",
     "conventional-changelog-cli": "^2.0.23",
+    "cross-env": "^7.0.3",
     "eslint": "^6.7.1",
     "eslint-plugin-jest": "^23.0.5",
     "eslint-plugin-vue-libs": "^4.0.0",
     "husky": "^3.0.5",
+    "import-local": "^3.0.2",
     "inquirer": "^7.0.0",
     "lerna": "3.16.4",
     "lint-staged": "^9.3.0",
     "minimist": "^1.2.0",
     "sort-package-json": "^1.24.0",
-    "typescript": "^3.6.3"
+    "typescript": "^3.6.3",
+    "vuepress": "file:packages/vuepress"
   }
 }
