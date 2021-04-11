@@ -22,3 +22,27 @@ pre.vue-container
       color #808080
       font-weight light
 
+
+
+
+#app
+  .depth-1
+    &>ul
+      &>li
+        .sidebar-link
+          font-size: 1.12em;
+          //background:red;
+          //font-size:18px!important;
+          
+    &>ul
+      li.sidebar-sub-header
+        &>ul
+            li.sidebar-sub-header
+              .sidebar-link
+                  font-size: 1.09em;
+        .sidebar-link
+          font-size: 1.11em;
+          
+      
+
+

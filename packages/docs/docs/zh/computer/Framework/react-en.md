@@ -1,38 +1,48 @@
-# React
-## React 生命周期分析
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-在 V16 版本中引入了 Fiber 机制。这个机制一定程度上的影响了部分生命周期的调用，并且也引入了新的 2 个 API 来解决问题。
+- [React Lifecycle analysis](#react-lifecycle-analysis)
+  - [The usage advice of  Lifecycle methods in React V16](#the-usage-advice-of--lifecycle-methods-in-react-v16)
+- [setState](#setstate)
+- [Redux Source Code Analysis](#redux-source-code-analysis)
 
-在之前的版本中，如果你拥有一个很复杂的复合组件，然后改动了最上层组件的 `state`，那么调用栈可能会很长
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+# React Lifecycle analysis
+
+The Fiber mechanism was introduced in the V16 release. The mechanism affects some of the lifecycle calls to a certain extent and introduces two new APIs to solve the problems.
+
+In previous versions, if you had a very complex composite component and then changed the `state` of the topmost component, the call stack might be long.
 
 ![](https://user-gold-cdn.xitu.io/2018/6/25/164358b0310f476c?w=685&h=739&f=png&s=61462)
 
-调用栈过长，再加上中间进行了复杂的操作，就可能导致长时间阻塞主线程，带来不好的用户体验。Fiber 就是为了解决该问题而生。
+If the call stack is too long, and complicated operations are performed in the middle, it may cause the main thread to be blocked for a long time, resulting in a bad user experience. Fiber is born to solve this problem.
 
-Fiber 本质上是一个虚拟的堆栈帧，新的调度器会按照优先级自由调度这些帧，从而将之前的同步渲染改成了异步渲染，在不影响体验的情况下去分段计算更新。
+Fiber is essentially a virtual stack frame, and the new scheduler freely schedules these frames according to their priority, thereby changing the previous synchronous rendering to asynchronous rendering, and segmenting the update without affecting the experience.
 
 ![](https://user-gold-cdn.xitu.io/2018/6/25/164358f89595d56f?w=1119&h=600&f=png&s=330885)
 
-对于如何区别优先级，React 有自己的一套逻辑。对于动画这种实时性很高的东西，也就是 16 ms 必须渲染一次保证不卡顿的情况下，React 会每 16 ms（以内） 暂停一下更新，返回来继续渲染动画。
+React has its own set of logic on how to prioritize. For things that require high real-time performance, such as animation, which means it must be rendered once within 16 ms to ensure that it is not stuck, React pauses the update every 16 ms (within 16ms) and returns to continue rendering the animation.
 
-对于异步渲染，现在渲染有两个阶段：`reconciliation` 和 `commit` 。前者过程是可以打断的，后者不能暂停，会一直更新界面直到完成。
+For asynchronous rendering, there are now two stages of rendering: `reconciliation` and `commit`. The former process can be interrupted, while the latter cannot be suspended, and the interface will be updated until it is completed.
 
-**Reconciliation** 阶段
+**Reconciliation** stage
 
 - `componentWillMount`
 - `componentWillReceiveProps`
 - `shouldComponentUpdate`
 - `componentWillUpdate`
 
-**Commit** 阶段
+**Commit** stage
 
 - `componentDidMount`
 - `componentDidUpdate`
 - `componentWillUnmount`
 
-因为 `reconciliation` 阶段是可以被打断的，所以 `reconciliation` 阶段会执行的生命周期函数就可能会出现调用多次的情况，从而引起 Bug。所以对于 `reconciliation` 阶段调用的几个函数，除了 `shouldComponentUpdate` 以外，其他都应该避免去使用，并且 V16 中也引入了新的 API 来解决这个问题。
+Because the `reconciliation` phase can be interrupted, the lifecycle functions that will be executed in the `reconciliation` phase may be called multiple times, which may cause bugs. So for these functions, except for `shouldComponentUpdate`, should be avoided as much as possible, and a new API is introduced in V16 to solve this problem.
 
-`getDerivedStateFromProps` 用于替换 `componentWillReceiveProps` ，该函数会在初始化和 `update` 时被调用
+`getDerivedStateFromProps` is used to replace `componentWillReceiveProps` , which is called during initialization and update
 
 ```js
 class ExampleComponent extends React.Component {
@@ -54,50 +64,50 @@ class ExampleComponent extends React.Component {
 }
 ```
 
-`getSnapshotBeforeUpdate` 用于替换 `componentWillUpdate` ，该函数会在 `update` 后 DOM 更新前被调用，用于读取最新的 DOM 数据。
+`getSnapshotBeforeUpdate` is used to replace `componentWillUpdate`, which is called after the `update` but before the DOM update to read the latest DOM data.
 
-### V16 生命周期函数用法建议
+## The usage advice of  Lifecycle methods in React V16
 
 ```js
 class ExampleComponent extends React.Component {
-  // 用于初始化 state
+  // Used to initialize the state
   constructor() {}
-  // 用于替换 `componentWillReceiveProps` ，该函数会在初始化和 `update` 时被调用
-  // 因为该函数是静态函数，所以取不到 `this`
-  // 如果需要对比 `prevProps` 需要单独在 `state` 中维护
+  // Used to replace `componentWillReceiveProps` , which will be called when initializing and `update`
+  // Because the function is static, you can't get `this`
+  // If need to compare `prevProps`, you need to maintain it separately in `state`
   static getDerivedStateFromProps(nextProps, prevState) {}
-  // 判断是否需要更新组件，多用于组件性能优化
+  // Determine whether you need to update components, mostly for component performance optimization
   shouldComponentUpdate(nextProps, nextState) {}
-  // 组件挂载后调用
-  // 可以在该函数中进行请求或者订阅
+  // Called after the component is mounted
+  // Can request or subscribe in this function
   componentDidMount() {}
-  // 用于获得最新的 DOM 数据
+  // Used to get the latest DOM data
   getSnapshotBeforeUpdate() {}
-  // 组件即将销毁
-  // 可以在此处移除订阅，定时器等等
+  // Component is about to be destroyed
+  // Can remove subscriptions, timers, etc. here
   componentWillUnmount() {}
-  // 组件销毁后调用
+  // Called after the component is destroyed
   componentDidUnMount() {}
-  // 组件更新后调用
+  // Called after component update
   componentDidUpdate() {}
-  // 渲染组件函数
+  // render component
   render() {}
-  // 以下函数不建议使用
+  // The following functions are not recommended
   UNSAFE_componentWillMount() {}
   UNSAFE_componentWillUpdate(nextProps, nextState) {}
   UNSAFE_componentWillReceiveProps(nextProps) {}
 }
 ```
 
-## setState
+# setState
 
-`setState` 在 React 中是经常使用的一个 API，但是它存在一些问题，可能会导致犯错，核心原因就是因为这个 API 是异步的。
+`setState` is an API that is often used in React, but it has some problems that can lead to mistakes. The core reason is that the API is asynchronous.
 
-首先 `setState` 的调用并不会马上引起 `state` 的改变，并且如果你一次调用了多个 `setState` ，那么结果可能并不如你期待的一样。
+First, calling  `setState` does not immediately cause a change to `state`, and if you call multiple `setState` at a time, the result may not be as you expect.
 
 ```js
 handle() {
-  // 初始化 `count` 为 0
+  // Initialize `count` to 0
   console.log(this.state.count) // -> 0
   this.setState({ count: this.state.count + 1 })
   this.setState({ count: this.state.count + 1 })
@@ -106,9 +116,9 @@ handle() {
 }
 ```
 
-第一，两次的打印都为 0，因为 `setState` 是个异步 API，只有同步代码运行完毕才会执行。`setState` 异步的原因我认为在于，`setState` 可能会导致 DOM 的重绘，如果调用一次就马上去进行重绘，那么调用多次就会造成不必要的性能损失。设计成异步的话，就可以将多次调用放入一个队列中，在恰当的时候统一进行更新过程。
+First, both prints are 0, because `setState` is an asynchronous API and will only execute after the sync code has finished running. The reason for `setState` is asynchronous is that `setState` may cause repainting of the DOM. If the call is repainted immediately after the call, the call will cause unnecessary performance loss. Designed to be asynchronous, you can put multiple calls into a queue and unify the update process when appropriate.
 
-第二，虽然调用了三次 `setState` ，但是 `count` 的值还是为 1。因为多次调用会合并为一次，只有当更新结束后 `state` 才会改变，三次调用等同于如下代码
+Second, although `setState` is called three times, the value of `count` is still 1. Because multiple calls are merged into one, only `state` will change when the update ends, and three calls are equivalent to the following code.
 
 ```js
 Object.assign(  
@@ -119,7 +129,7 @@ Object.assign(
 )
 ```
 
-当然你也可以通过以下方式来实现调用三次 `setState` 使得 `count` 为 3
+Of course, you can also call `setState` three times by the following way  to make `count` 3
 
 ```js
 handle() {
@@ -129,7 +139,7 @@ handle() {
 }
 ```
 
-如果你想在每次调用 `setState` 后获得正确的 `state` ，可以通过如下代码实现
+If you want to get the correct `state` after each call to `setState`, you can do it with the following code:
 
 ```js
 handle() {
@@ -138,21 +148,20 @@ handle() {
     })
 }
 ```
+# Redux Source Code Analysis
 
-## Redux 源码分析
-
-首先让我们来看下 `combineReducers` 函数
+Let's take a look at the `combineReducers` function first.
 
 ```js
-// 传入一个 object
+// pass an object
 export default function combineReducers(reducers) {
- // 获取该 Object 的 key 值
+ // get this object's keys
   const reducerKeys = Object.keys(reducers)
-  // 过滤后的 reducers
+  // reducers after filtering
   const finalReducers = {}
-  // 获取每一个 key 对应的 value
-  // 在开发环境下判断值是否为 undefined
-  // 然后将值类型是函数的值放入 finalReducers
+  // get the values corresponding to every key
+  // in dev environment, check if the value is undefined
+  // then put function type values into finalReducers
   for (let i = 0; i < reducerKeys.length; i++) {
     const key = reducerKeys[i]
 
@@ -166,10 +175,10 @@ export default function combineReducers(reducers) {
       finalReducers[key] = reducers[key]
     }
   }
-  // 拿到过滤后的 reducers 的 key 值
+  // get the keys of the reducers after filtering
   const finalReducerKeys = Object.keys(finalReducers)
   
-  // 在开发环境下判断，保存不期望 key 的缓存用以下面做警告  
+  // in dev environment check and save unexpected key to cache for warnings later
   let unexpectedKeyCache
   if (process.env.NODE_ENV !== 'production') {
     unexpectedKeyCache = {}
@@ -177,19 +186,19 @@ export default function combineReducers(reducers) {
     
   let shapeAssertionError
   try {
-  // 该函数解析在下面
+  // explanations of the function is below
     assertReducerShape(finalReducers)
   } catch (e) {
     shapeAssertionError = e
   }
-// combineReducers 函数返回一个函数，也就是合并后的 reducer 函数
-// 该函数返回总的 state
-// 并且你也可以发现这里使用了闭包，函数里面使用到了外面的一些属性
+// combineReducers returns another function, which is reducer after merging
+// this function returns the root state
+// also notice a closure is used here. The function uses some outside properties
   return function combination(state = {}, action) {
     if (shapeAssertionError) {
       throw shapeAssertionError
     }
-    // 该函数解析在下面
+    // explanations of the function is below
     if (process.env.NODE_ENV !== 'production') {
       const warningMessage = getUnexpectedStateShapeWarningMessage(
         state,
@@ -201,49 +210,49 @@ export default function combineReducers(reducers) {
         warning(warningMessage)
       }
     }
-    // state 是否改变
+    // if state changed
     let hasChanged = false
-    // 改变后的 state
+    // state after changes
     const nextState = {}
     for (let i = 0; i < finalReducerKeys.length; i++) {
-    // 拿到相应的 key
+    // get the key with index
       const key = finalReducerKeys[i]
-      // 获得 key 对应的 reducer 函数
+      // get the corresponding reducer function with key
       const reducer = finalReducers[key]
-      // state 树下的 key 是与 finalReducers 下的 key 相同的
-      // 所以你在 combineReducers 中传入的参数的 key 即代表了 各个 reducer 也代表了各个 state
+      // the key in state tree is the same as the key in finalReducers
+      // so the key of the parameter passed to combineReducers represents each reducer as well as each state
       const previousStateForKey = state[key]
-      // 然后执行 reducer 函数获得该 key 值对应的 state
+      // execute reducer function to get the state corresponding to the key
       const nextStateForKey = reducer(previousStateForKey, action)
-      // 判断 state 的值，undefined 的话就报错
+      // check the value of state, report error if it's undefined
       if (typeof nextStateForKey === 'undefined') {
         const errorMessage = getUndefinedStateErrorMessage(key, action)
         throw new Error(errorMessage)
       }
-      // 然后将 value 塞进去
+      // put the value into nextState
       nextState[key] = nextStateForKey
-      // 如果 state 改变
+      // if state changed
       hasChanged = hasChanged || nextStateForKey !== previousStateForKey
     }
-    // state 只要改变过，就返回新的 state
+    // as long as state changed, return the new state
     return hasChanged ? nextState : state
   }
 }
 ```
 
-`combineReducers` 函数总的来说很简单，总结来说就是接收一个对象，将参数过滤后返回一个函数。该函数里有一个过滤参数后的对象 finalReducers，遍历该对象，然后执行对象中的每一个 reducer 函数，最后将新的 state 返回。
+`combineReducers` is simple in general. In short, it accepts an object and return a function after processing the parameters. This function has an object finalReducers that stores the processed parameters. The object is then itereated on, each reducer function in it is executed, and the new state is returned.
 
-接下来让我们来看看 combinrReducers 中用到的两个函数
+Let's then take a look at the two functions used in combineReducers.
 
 ```js
-// 这是执行的第一个用于抛错的函数
+// the first function used to throw errors
 function assertReducerShape(reducers) {
-// 将 combineReducers 中的参数遍历
+// iterate on the parameters in combineReducers
   Object.keys(reducers).forEach(key => {
     const reducer = reducers[key]
-    // 给他传入一个 action
+    // pass an action
     const initialState = reducer(undefined, { type: ActionTypes.INIT })
-    // 如果得到的 state 为 undefined 就抛错
+    // throw an error if the state is undefined
     if (typeof initialState === 'undefined') {
       throw new Error(
         `Reducer "${key}" returned undefined during initialization. ` +
@@ -253,8 +262,8 @@ function assertReducerShape(reducers) {
           `you can use null instead of undefined.`
       )
     }
-    // 再过滤一次，考虑到万一你在 reducer 中给 ActionTypes.INIT 返回了值
-    // 传入一个随机的 action 判断值是否为 undefined
+    // process again, considering the case that the user returned a value for ActionTypes.INIT in the reducer
+    // pass a random action and check if the value is undefined
     const type =
       '@@redux/PROBE_UNKNOWN_ACTION_' +
       Math.random()
@@ -283,21 +292,21 @@ function getUnexpectedStateShapeWarningMessage(
   action,
   unexpectedKeyCache
 ) {
-  // 这里的 reducers 已经是 finalReducers
+  // here the reducers is already finalReducers
   const reducerKeys = Object.keys(reducers)
   const argumentName =
     action && action.type === ActionTypes.INIT
       ? 'preloadedState argument passed to createStore'
       : 'previous state received by the reducer'
   
-  // 如果 finalReducers 为空
+  // if finalReducers is empty
   if (reducerKeys.length === 0) {
     return (
       'Store does not have a valid reducer. Make sure the argument passed ' +
       'to combineReducers is an object whose values are reducers.'
     )
   }
-    // 如果你传入的 state 不是对象
+  // if the state passed is not an object
   if (!isPlainObject(inputState)) {
     return (
       `The ${argumentName} has unexpected type of "` +
@@ -306,7 +315,7 @@ function getUnexpectedStateShapeWarningMessage(
       `keys: "${reducerKeys.join('", "')}"`
     )
   }
-    // 将参入的 state 于 finalReducers 下的 key 做比较，过滤出多余的 key
+  // compare the keys of the state and of finalReducers and filter out the extra keys
   const unexpectedKeys = Object.keys(inputState).filter(
     key => !reducers.hasOwnProperty(key) && !unexpectedKeyCache[key]
   )
@@ -317,7 +326,7 @@ function getUnexpectedStateShapeWarningMessage(
 
   if (action && action.type === ActionTypes.REPLACE) return
 
-// 如果 unexpectedKeys 有值的话
+// if unexpectedKeys is not empty
   if (unexpectedKeys.length > 0) {
     return (
       `Unexpected ${unexpectedKeys.length > 1 ? 'keys' : 'key'} ` +
@@ -329,18 +338,18 @@ function getUnexpectedStateShapeWarningMessage(
 }
 ```
 
-接下来让我们先来看看 `compose` 函数
+Let's then take a look at `compose` function
 
 ```js
-// 这个函数设计的很巧妙，通过传入函数引用的方式让我们完成多个函数的嵌套使用，术语叫做高阶函数
-// 通过使用 reduce 函数做到从右至左调用函数
-// 对于上面项目中的例子
+// This function is quite elegant. It let us stack several functions via passing the references of functions. The term is called Higher-order function.
+// call functions from the right to the left with reduce function
+// for the example in the project above
 compose(
     applyMiddleware(thunkMiddleware),
     window.devToolsExtension ? window.devToolsExtension() : f => f
 ) 
-// 经过 compose 函数变成了 applyMiddleware(thunkMiddleware)(window.devToolsExtension()())
-// 所以在找不到 window.devToolsExtension 时你应该返回一个函数
+// with compose it turns into applyMiddleware(thunkMiddleware)(window.devToolsExtension()())
+// so you should return a function when window.devToolsExtension is not found
 export default function compose(...funcs) {
   if (funcs.length === 0) {
     return arg => arg
@@ -354,41 +363,40 @@ export default function compose(...funcs) {
 }
 ```
 
-然后我们来解析 `createStore` 函数的部分代码
+Let's then analyze part of the source code of `createStore` function
 
 ```js
 export default function createStore(reducer, preloadedState, enhancer) {
-  // 一般 preloadedState 用的少，判断类型，如果第二个参数是函数且没有第三个参数，就调换位置
+  // normally preloadedState is rarely used
+  // check type, is the second parameter is a function and there is no third parameter, then exchange positions
   if (typeof preloadedState === 'function' && typeof enhancer === 'undefined') {
     enhancer = preloadedState
     preloadedState = undefined
   }
-  // 判断 enhancer 是否是函数
+  // check if enhancer is a function
   if (typeof enhancer !== 'undefined') {
     if (typeof enhancer !== 'function') {
       throw new Error('Expected the enhancer to be a function.')
     }
-    // 类型没错的话，先执行 enhancer，然后再执行 createStore 函数
+    // if there is no type error, first execute enhancer, then execute createStore
     return enhancer(createStore)(reducer, preloadedState)
   }
-  // 判断 reducer 是否是函数
+  // check if reducer is a function
   if (typeof reducer !== 'function') {
     throw new Error('Expected the reducer to be a function.')
   }
-  // 当前 reducer
+  // current reducer
   let currentReducer = reducer
-  // 当前状态
+  // current state
   let currentState = preloadedState
-  // 当前监听函数数组
+  // current listener array
   let currentListeners = []
-  // 这是一个很重要的设计，为的就是每次在遍历监听器的时候保证 currentListeners 数组不变
-  // 可以考虑下只存在 currentListeners 的情况，如果我在某个 subscribe 中再次执行 subscribe
-  // 或者 unsubscribe，这样会导致当前的 currentListeners 数组大小发生改变，从而可能导致
-  // 索引出错
+  // this is a very important design. The purpose is that currentListeners array is an invariant when the listeners are iterated every time
+  // we can consider if only currentListeners exists. If we execute subscribe again in some subscribe execution, or unsubscribe, it would change the length of the currentListeners array, so there might be an index error
   let nextListeners = currentListeners
-  // reducer 是否正在执行
+  // if reducer is executing
   let isDispatching = false
-  // 如果 currentListeners 和 nextListeners 相同，就赋值回去
+  // if currentListeners is the same as nextListeners, assign the value back
   function ensureCanMutateNextListeners() {
     if (nextListeners === currentListeners) {
       nextListeners = currentListeners.slice()
@@ -398,30 +406,31 @@ export default function createStore(reducer, preloadedState, enhancer) {
 }
 ```
 
-接下来先来介绍 `applyMiddleware` 函数
+We look at `applyMiddleware` function next
 
-在这之前我需要先来介绍一下函数柯里化，柯里化是一种将使用多个参数的一个函数转换成一系列使用一个参数的函数的技术。
+Before that I need to introduce a concept called function Currying. Currying is a technology for changing a function with multiple parameters to a series of functions with a single parameter.
 
 ```js
 function add(a,b) { return a + b }   
 add(1, 2) => 3
-// 对于以上函数如果使用柯里化可以这样改造
+// for the above function, we can use Currying like so
 function add(a) {
     return b => {
         return a + b
     }
 }
 add(1)(2) => 3
-// 你可以这样理解函数柯里化，通过闭包保存了外部的一个变量，然后返回一个接收参数的函数，在该函数中使用了保存的变量，然后再返回值。
+// you can understand Currying like this:
+// we store an outside variable with a closure, and return a function that takes a parameter. In this function, we use the stored variable and return the value.
 ```
 
 ```js
-// 这个函数应该是整个源码中最难理解的一块了
-// 该函数返回一个柯里化的函数
-// 所以调用这个函数应该这样写 applyMiddleware(...middlewares)(createStore)(...args)
+// this function should be the most abstruse part of the whole source code
+// this function returns a function Curried
+// therefore the funciton should be called like so: applyMiddleware(...middlewares)(createStore)(...args)
 export default function applyMiddleware(...middlewares) {
   return createStore => (...args) => {
-   // 这里执行 createStore 函数，把 applyMiddleware 函数最后次调用的参数传进来
+    // here we execute createStore, and pass the parameters passed lastly to the applyMiddleware function
     const store = createStore(...args)
     let dispatch = () => {
       throw new Error(
@@ -430,24 +439,24 @@ export default function applyMiddleware(...middlewares) {
       )
     }
     let chain = []
-    // 每个中间件都应该有这两个函数
+    // every middleware should have these two functions
     const middlewareAPI = {
       getState: store.getState,
       dispatch: (...args) => dispatch(...args)
     }
-    // 把 middlewares 中的每个中间件都传入 middlewareAPI
+    // pass every middleware in middlewares to middlewareAPI
     chain = middlewares.map(middleware => middleware(middlewareAPI))
-    // 和之前一样，从右至左调用每个中间件，然后传入 store.dispatch
+    // same as before, calle very middleWare from right to left, and pass to store.dispatch
     dispatch = compose(...chain)(store.dispatch)
-    // 这里只看这部分代码有点抽象，我这里放入 redux-thunk 的代码来结合分析
-    // createThunkMiddleware返回了3层函数，第一层函数接收 middlewareAPI 参数
-    // 第二次函数接收 store.dispatch
-    // 第三层函数接收 dispatch 中的参数
+    // this piece is a little abstract, we'll analyze together with the code of redux-thunk
+    // createThunkMiddleware returns a 3-level function, the first level accepts a middlewareAPI parameter
+    // the second level accepts store.dispatch
+    // the third level accepts parameters in dispatch
 {function createThunkMiddleware(extraArgument) {
   return ({ dispatch, getState }) => next => action => {
-  // 判断 dispatch 中的参数是否为函数
+    // check if the parameters in dispatch is a function
     if (typeof action === 'function') {
-    // 是函数的话再把这些参数传进去，直到 action 不为函数，执行 dispatch({tyep: 'XXX'})
+      // if so, pass those parameters, until action is no longer a function, then execute dispatch({type: 'XXX'})
       return action(dispatch, getState, extraArgument);
     }
 
@@ -457,7 +466,7 @@ export default function applyMiddleware(...middlewares) {
 const thunk = createThunkMiddleware();
 
 export default thunk;}
-// 最后把经过中间件加强后的 dispatch 于剩余 store 中的属性返回，这样你的 dispatch
+// return the middleware-empowered dispatch and the rest of the properties in store.
     return {
       ...store,
       dispatch
@@ -466,10 +475,10 @@ export default thunk;}
 }
 ```
 
-好了，我们现在将困难的部分都攻克了，来看一些简单的代码
+Now we've passed the hardest part. Let's take a look at some easier pieces.
 
 ```js 
-// 这个没啥好说的，就是把当前的 state 返回，但是当正在执行 reducer 时不能执行该方法
+// Not much to say here, return the current state, but we can't call this function when reducer is running
 function getState() {
     if (isDispatching) {
       throw new Error(
@@ -481,12 +490,12 @@ function getState() {
 
     return currentState
 }
-// 接收一个函数参数
+// accept a function parameter
 function subscribe(listener) {
     if (typeof listener !== 'function') {
       throw new Error('Expected listener to be a function.')
     }
-// 这部分最主要的设计 nextListeners 已经讲过，其他基本没什么好说的
+    // the major design of this part is already covered in the description of nextListeners. Not much to talk about otherwise
     if (isDispatching) {
       throw new Error(
         'You may not call store.subscribe() while the reducer is executing. ' +
@@ -501,7 +510,7 @@ function subscribe(listener) {
     ensureCanMutateNextListeners()
     nextListeners.push(listener)
 
-// 返回一个取消订阅函数
+// return a cancel subscription function
     return function unsubscribe() {
       if (!isSubscribed) {
         return
@@ -523,7 +532,7 @@ function subscribe(listener) {
   }
  
 function dispatch(action) {
-// 原生的 dispatch 会判断 action 是否为对象
+  // the prototype dispatch will check if action is an object
     if (!isPlainObject(action)) {
       throw new Error(
         'Actions must be plain objects. ' +
@@ -537,19 +546,19 @@ function dispatch(action) {
           'Have you misspelled a constant?'
       )
     }
-// 注意在 Reducers 中是不能执行 dispatch 函数的
-// 因为你一旦在 reducer 函数中执行 dispatch，会引发死循环
+    // note that you can't call dispatch function in reducers
+    // it would cause a stack overflow
     if (isDispatching) {
       throw new Error('Reducers may not dispatch actions.')
     }
-// 执行 combineReducers 组合后的函数
+    // execute the composed function after combineReducers
     try {
       isDispatching = true
       currentState = currentReducer(currentState, action)
     } finally {
       isDispatching = false
     }
-// 然后遍历 currentListeners，执行数组中保存的函数
+    // iterate on currentListeners and execute saved functions in the array
     const listeners = (currentListeners = nextListeners)
     for (let i = 0; i < listeners.length; i++) {
       const listener = listeners[i]
@@ -558,8 +567,6 @@ function dispatch(action) {
 
     return action
   }
- // 然后在 createStore 末尾会发起一个 action dispatch({ type: ActionTypes.INIT });
- // 用以初始化 state
+  // at the end of createStore, invoke an action dispatch({ type: ActionTypes.INIT });
+  // to initialize state
 ```
-
-

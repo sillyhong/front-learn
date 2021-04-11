@@ -10,7 +10,7 @@ function foo () {
       },
       '/zh/': {
         lang: 'zh-CN',
-        title: 'VuePress',
+        title: 'VuePress123',
         description: 'Vue 驱动的静态网站生成器'
       }
     },

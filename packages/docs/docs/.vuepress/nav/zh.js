@@ -1,7 +1,21 @@
 module.exports = [
   {
     text: '前端',
-    link: '/zh/frontend/'
+    items: [
+      {
+        text: '面试',
+        link: '/zh/frontend/'
+      },
+      {
+        text: '计算机相关',
+        link: '/zh/computer/'
+      },
+      {
+        text: '小程序',
+        link: '/zh/miniprogram/'
+      }
+
+    ]
   },
   {
     text: '指南',

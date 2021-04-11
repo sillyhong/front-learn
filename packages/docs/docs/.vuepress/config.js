@@ -5,13 +5,13 @@ module.exports = ctx => ({
   locales: {
     '/': {
       lang: 'en-US',
-      title: 'VuePress',
+      title: '前端进阶',
       description: 'Vue-powered Static Site Generator'
     },
     '/zh/': {
       lang: 'zh-CN',
       title: 'VuePress',
-      description: 'Vue 驱动的静态网站生成器'
+      description: '前端进阶'
     }
   },
   head: [
@@ -34,7 +34,7 @@ module.exports = ctx => ({
     //   includeLevel: [1, 2, 3, 4],
     // },
   },
-  theme: '@vuepress/vue',
+  theme: '@vuepress/theme-default',
   themeConfig: {
     repo: 'vuejs/vuepress',
     editLinks: true,
@@ -73,6 +73,8 @@ module.exports = ctx => ({
         nav: require('./nav/zh'),
         sidebar: {
           '/zh/frontend/': getFrontendSidebar('前端'),
+          '/zh/computer/': getComputerSidebar('计算机通识'),
+          '/zh/miniprogram/': getMiniProgramSidebar('小程序'),
           '/zh/api/': getApiSidebar(),
           '/zh/guide/': getGuideSidebar('指南', '深入'),
           '/zh/plugin/': getPluginSidebar('插件', '介绍', '官方插件'),
@@ -157,18 +159,51 @@ function getFrontendSidebar (groupA, groupB) {
         sidebarDepth: 4,
         children: [
           ['', 'JS'],
-          'performance/performance-ch.md',
-          'Safety/safety-cn.md'
+          'Browser/browser-ch.md',
+          'Performance/performance-ch.md',
+          'Safety/safety-cn.md',
+          'Framework/framework-zh.md',
+          'Framework/vue-zh.md',
+          'Framework/react-zh.md'
         ]
       }]
     }
-    // {
-    //   collapsable: false,
-    //   sidebarDepth: 2,
-    //   children: [
-    //     'performance/performance-ch.md',
-    //   ]
-    // },
+  ]
+}
+function getComputerSidebar (groupA, groupB) {
+  return [
+    {
+      title: groupA,
+      collapsable: false,
+      sidebarDepth: 4,
+      children: [{
+        collapsable: false,
+        sidebarDepth: 4,
+        children: [
+          'Network/Network-zh.md',
+          'DataStruct/dataStruct-zh.md',
+          'Algorithm/algorithm-ch.md',
+          'Git/git-zh.md'
+        ]
+      }]
+    }
+
+  ]
+}
+function getMiniProgramSidebar (groupA, groupB) {
+  return [
+    {
+      title: groupA,
+      collapsable: false,
+      sidebarDepth: 4,
+      children: [{
+        collapsable: false,
+        sidebarDepth: 4,
+        children: [
+          'miniApp-ch.md'
+        ]
+      }]
+    }
 
   ]
 }
